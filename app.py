@@ -15,8 +15,8 @@ from utils.ocr import extract_cells_to_dataframe
 st.set_page_config(page_title="PDF Table Extractor", layout="centered")
 st.title("📄 Upload a Scanned PDF to Extract Tables")
 
-uploaded_file = st.file_uploader("Upload a scanned PDF file", type=["pdf"])
 ocr_lang = st.selectbox("Select OCR language", ["eng", "ita", "deu", "fra", "spa", "nld"], index=0)
+uploaded_file = st.file_uploader("Upload a scanned PDF file", type=["pdf"])
 
 if uploaded_file:
     with TemporaryDirectory() as temp_dir:
@@ -42,6 +42,14 @@ if uploaded_file:
             df = extract_cells_to_dataframe(pre_img, boxes, lang=ocr_lang)
             st.dataframe(df)
             all_dataframes.append(df)
+
+            # ➕ Edit 3: OCR fallback on bottom of page (totals etc.)
+            bottom_slice = pre_img[int(pre_img.shape[0]*0.85):, :]
+            footer_text = pytesseract.image_to_string(bottom_slice, config="--psm 6", lang=ocr_lang).strip()
+
+            if footer_text:
+                st.markdown("#### 📉 Totals Detected Below Table:")
+                st.code(footer_text)
 
         if all_dataframes:
             if st.button("📥 Download All as Excel"):
