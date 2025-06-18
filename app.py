@@ -2,9 +2,10 @@ import streamlit as st
 from pdf2image import convert_from_bytes
 from tempfile import TemporaryDirectory
 import io
-
 import sys
 import os
+import pandas as pd 
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from utils.preprocessing import preprocess_image
