@@ -7,19 +7,18 @@ import os
 import pandas as pd
 import pytesseract
 
-# Path fix for local module imports
+# Local imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from utils.preprocessing import preprocess_image
-from utils.detection import detect_table_grid
+from utils.detection import detect_table_cells
 from utils.ocr import extract_cells_to_dataframe
 from utils.text_extract import try_pdf_text_extraction
 
-# Page config
+# UI setup
 st.set_page_config(page_title="PDF Table Extractor", layout="centered")
 st.title("📄 Upload a Scanned or Digital PDF Table")
 
-# UI controls
 ocr_lang = st.selectbox("Select OCR language", ["eng", "ita", "deu", "fra", "spa", "nld"], index=0)
 use_ocr = st.checkbox("Force OCR (disable if PDF contains selectable text)", value=True)
 uploaded_file = st.file_uploader("Upload a PDF", type=["pdf"])
@@ -30,7 +29,7 @@ if uploaded_file:
         pdf_bytes = uploaded_file.read()
 
         if not use_ocr:
-            st.info("Attempting text-based table extraction...")
+            st.info("Trying text-based table extraction...")
             tables_by_page = try_pdf_text_extraction(io.BytesIO(pdf_bytes))
 
             any_tables_found = False
@@ -48,7 +47,7 @@ if uploaded_file:
             else:
                 st.warning("⚠️ No text-based tables found. Falling back to OCR.")
 
-        # Continue with OCR-based flow
+        # OCR path
         st.info("Converting PDF to images...")
         images = convert_from_bytes(pdf_bytes, dpi=300, output_folder=temp_dir)
         st.success(f"PDF converted: {len(images)} page(s) detected.")
@@ -71,9 +70,8 @@ if uploaded_file:
             for page_num in selected_pages:
                 st.subheader(f"Page {page_num}")
                 pre_img = preprocess_image(images[page_num - 1])
-                table_img, boxes = detect_table_grid(pre_img)
-
-                st.image(table_img, caption="Detected Table Grid", use_container_width=True)
+                table_img, boxes = detect_table_cells(pre_img)
+                st.image(table_img, caption="Detected Table Cells", use_container_width=True)
                 st.write(f"🧩 Detected {len(boxes)} cell(s)")
 
                 df = extract_cells_to_dataframe(pre_img, boxes, lang=ocr_lang)
@@ -81,24 +79,3 @@ if uploaded_file:
                 if df.empty:
                     st.warning("⚠️ No text extracted from this page.")
                 else:
-                    st.dataframe(df)
-                    all_dataframes.append(df)
-
-            if all_dataframes:
-                if st.button("📥 Download All as Excel"):
-                    with io.BytesIO() as towrite:
-                        with pd.ExcelWriter(towrite, engine="openpyxl") as writer:
-                            for i, df in enumerate(all_dataframes):
-                                df.to_excel(
-                                    writer,
-                                    index=False,
-                                    header=False,
-                                    sheet_name=f"Page_{selected_pages[i]}"
-                                )
-                        towrite.seek(0)
-                        st.download_button(
-                            label="Download Excel File",
-                            data=towrite,
-                            file_name="multi_page_tables.xlsx",
-                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                        )
