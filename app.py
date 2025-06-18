@@ -1,3 +1,4 @@
+# app.py
 import streamlit as st
 from pdf2image import convert_from_bytes
 from tempfile import TemporaryDirectory
@@ -5,22 +6,22 @@ import io
 import sys
 import os
 import pandas as pd
-import pytesseract
 
-# Local module path
+# Add local utils folder to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from utils.preprocessing import preprocess_image
 from utils.detection import detect_table_cells
 from utils.ocr import extract_cells_to_dataframe
+from utils.lp_ocr import extract_table_with_layoutparser
 
-# Page setup
-st.set_page_config(page_title="Simple PDF Table Extractor", layout="centered")
-st.title("📄 OCR-based Table Extractor")
+st.set_page_config(page_title="PDF Table Extractor (Layout-Aware)", layout="centered")
+st.title("📄 PDF Table Extractor with Layout Awareness")
 
-# OCR language and file
 ocr_lang = st.selectbox("Select OCR language", ["eng", "ita", "deu", "fra", "spa", "nld"], index=0)
-uploaded_file = st.file_uploader("Upload scanned PDF", type=["pdf"])
+ocr_engine = st.radio("Choose OCR engine", ["Layout-aware (LayoutParser)", "Classic (Tesseract only)"])
+
+uploaded_file = st.file_uploader("Upload a scanned PDF file", type=["pdf"])
 
 if uploaded_file:
     with TemporaryDirectory() as temp_dir:
@@ -45,13 +46,19 @@ if uploaded_file:
 
             for page_num in selected_pages:
                 st.subheader(f"Page {page_num}")
-                with st.spinner("Processing..."):
-                    pre_img = preprocess_image(images[page_num - 1])
-                    table_img, boxes = detect_table_cells(pre_img)
-                    df = extract_cells_to_dataframe(pre_img, boxes, lang=ocr_lang)
+                with st.spinner("Processing page..."):
+                    image = images[page_num - 1]
+
+                    if ocr_engine == "Layout-aware (LayoutParser)":
+                        df = extract_table_with_layoutparser(image, lang=ocr_lang)
+                        table_img = image
+                    else:
+                        pre_img = preprocess_image(image)
+                        table_img, boxes = detect_table_cells(pre_img)
+                        df = extract_cells_to_dataframe(pre_img, boxes, lang=ocr_lang)
 
                 st.image(table_img, caption="Detected Table Cells", use_container_width=True)
-                st.write(f"🧩 Detected {len(boxes)} cell(s)")
+                st.write(f"🧩 Detected {len(df)} row(s)")
 
                 if df.empty:
                     st.warning("⚠️ No table detected on this page.")
