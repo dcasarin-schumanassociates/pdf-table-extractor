@@ -51,4 +51,15 @@ if uploaded_file:
             progress.progress(100, text="Done")
 
         if all_dfs:
-            if st.button("📥
+            if st.button("📥 Download all as Excel"):
+                with io.BytesIO() as output:
+                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                        for pg, df in all_dfs:
+                            df.to_excel(writer, index=False, header=False, sheet_name=f"Page_{pg}")
+                    output.seek(0)
+                    st.download_button(
+                        label="Download Excel File",
+                        data=output,
+                        file_name="ocr_extracted_tables.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
