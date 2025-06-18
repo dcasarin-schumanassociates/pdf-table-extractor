@@ -17,7 +17,7 @@ def preprocess_image(pil_image):
         image,
         255,
         cv2.ADAPTIVE_THRESH_MEAN_C,
-        cv2.THRESH_BINARY_INV,  # INVERT to detect white-on-dark headings better
+        cv2.THRESH_BINARY
         15,
         10
     )
