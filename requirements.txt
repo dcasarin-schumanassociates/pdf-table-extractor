@@ -14,3 +14,10 @@ opencv-python-headless
 layoutparser[layoutmodels,tesseract]
 torch
 opencv-python-headless
+python-doctr[torch]
+opencv-python
+pytesseract
+pdf2image
+pdfplumber
+streamlit
+pillow
