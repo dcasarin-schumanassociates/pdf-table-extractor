@@ -8,3 +8,5 @@ pandas
 numpy
 Pillow
 openpyxl
+torch
+torchvision
