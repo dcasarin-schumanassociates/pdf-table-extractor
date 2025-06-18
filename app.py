@@ -69,12 +69,14 @@ if uploaded_file:
 
             for page_num in selected_pages:
                 st.subheader(f"Page {page_num}")
-                pre_img = preprocess_image(images[page_num - 1])
-                table_img, boxes = detect_table_cells(pre_img)
+
+                with st.spinner("Processing page..."):
+                    pre_img = preprocess_image(images[page_num - 1])
+                    table_img, boxes = detect_table_cells(pre_img)
+                    df = extract_cells_to_dataframe(pre_img, boxes, lang=ocr_lang)
+
                 st.image(table_img, caption="Detected Table Cells", use_container_width=True)
                 st.write(f"🧩 Detected {len(boxes)} cell(s)")
-
-                df = extract_cells_to_dataframe(pre_img, boxes, lang=ocr_lang)
 
                 if df.empty:
                     st.warning("⚠️ No text extracted from this page.")
