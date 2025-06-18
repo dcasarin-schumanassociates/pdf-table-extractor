@@ -6,3 +6,4 @@ numpy
 pytesseract
 pandas
 openpyxl
+pdfplumber
