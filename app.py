@@ -79,3 +79,28 @@ if uploaded_file:
                 if df.empty:
                     st.warning("⚠️ No text extracted from this page.")
                 else:
+                    st.dataframe(df)
+                    all_dataframes.append(df)
+
+            if all_dataframes:
+                if st.button("📥 Download All as Excel"):
+                    with io.BytesIO() as towrite:
+                        with pd.ExcelWriter(towrite, engine="openpyxl") as writer:
+                            for i, df in enumerate(all_dataframes):
+                                df.to_excel(
+                                    writer,
+                                    index=False,
+                                    header=False,
+                                    sheet_name=f"Page_{selected_pages[i]}"
+                                )
+                        towrite.seek(0)
+                        st.download_button(
+                            label="Download Excel File",
+                            data=towrite,
+                            file_name="multi_page_tables.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )
+
+                if df.empty:
+                    st.warning("⚠️ No text extracted from this page.")
+                else:
