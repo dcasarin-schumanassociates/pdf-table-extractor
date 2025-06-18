@@ -8,7 +8,7 @@ def extract_cells_to_dataframe(image, boxes, lang="eng"):
 
     for x, y, w, h in boxes:
         cropped = image[y:y+h, x:x+w]
-        text = pytesseract.image_to_string(cropped, config="--psm 7", lang=lang).strip()
+        text = pytesseract.image_to_string(cropped, config="--psm 6", lang=lang).strip()  # ✅ use psm 6 for better flexibility
 
         if abs(y - last_y) > tolerance:
             if current_row:
@@ -21,8 +21,11 @@ def extract_cells_to_dataframe(image, boxes, lang="eng"):
     if current_row:
         rows.append(current_row)
 
-    max_cols = max(len(row) for row in rows)
-    for row in rows:
-        row += [""] * (max_cols - len(row))
-
-    return pd.DataFrame(rows)
+    # ✅ SAFETY CHECK — avoid crash on empty `rows`
+    if rows:
+        max_cols = max(len(row) for row in rows)
+        for row in rows:
+            row += [""] * (max_cols - len(row))
+        return pd.DataFrame(rows)
+    else:
+        return pd.DataFrame()
