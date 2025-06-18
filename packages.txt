@@ -1,5 +1,8 @@
+# Base for PDF/image conversion and GUI-less rendering
 libgl1-mesa-glx
 poppler-utils
+
+# Tesseract + language packs
 tesseract-ocr
 tesseract-ocr-eng
 tesseract-ocr-ita
@@ -8,3 +11,8 @@ tesseract-ocr-fra
 tesseract-ocr-spa
 tesseract-ocr-nld
 
+# Optional, but useful for doctr PIL image display or deeper model inference
+libglib2.0-0
+libsm6
+libxext6
+libxrender1
