@@ -3,6 +3,10 @@ from pdf2image import convert_from_bytes
 from tempfile import TemporaryDirectory
 import io
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from utils.preprocessing import preprocess_image
 from utils.detection import detect_table_cells
 from utils.ocr import extract_cells_to_dataframe
