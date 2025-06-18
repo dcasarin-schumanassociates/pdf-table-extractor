@@ -20,11 +20,15 @@ def detect_table_cells(preprocessed_img):
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)
         area = w * h
-        if w > 40 and h > 20 and area > 1500:
+        aspect_ratio = w / h if h != 0 else 0
+        area = w * h
+
+        # Exclude very narrow/tall lines (likely borders) and small boxes
+        if w > 40 and h > 20 and area > 2000 and 0.2 < aspect_ratio < 5:
+
             # Check if box is below the main table (likely a total row)
             if y > preprocessed_img.shape[0] * 0.85:
                 h += 20  # artificially expand totals row height
             boxes.append((x, y, w, h))
 
     return img_draw, sorted(boxes, key=lambda b: (b[1], b[0]))
-
