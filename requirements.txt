@@ -11,3 +11,6 @@ layoutparser
 layoutparser[layoutmodels,tesseract]
 torch
 opencv-python-headless
+layoutparser[layoutmodels,tesseract]
+torch
+opencv-python-headless
