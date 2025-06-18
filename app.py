@@ -6,16 +6,17 @@ import os
 import sys
 import pandas as pd
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Add utils path
+sys.path.append(os.path.join(os.path.dirname(__file__), 'utils'))
 
-from utils.preprocessing import preprocess_image
-from utils.detection import detect_table_cells
-from utils.ocr import extract_cells_to_dataframe
+# Import the PaddleOCR-based extraction
+from paddle_ocr import extract_table_paddle
 
-st.set_page_config(page_title="PDF Table Extractor", layout="centered")
-st.title("📄 Upload a Scanned PDF to Extract Tables")
+st.set_page_config(page_title="PDF Table Extractor (PaddleOCR)", layout="centered")
+st.title("📄 PDF Table Extractor with PaddleOCR")
 
-ocr_lang = st.selectbox("Select OCR language", ["eng", "ita", "deu", "fra", "spa", "nld"], index=0)
+# --- Upload and OCR Language Selection ---
+ocr_lang = st.selectbox("OCR Language (used internally by PaddleOCR)", ["en"], index=0)
 uploaded_file = st.file_uploader("Upload a scanned PDF file", type=["pdf"])
 
 if uploaded_file:
@@ -28,32 +29,37 @@ if uploaded_file:
             for i, img in enumerate(images):
                 st.image(img, caption=f"Page {i+1}", use_container_width=True)
 
-        selected_pages = st.multiselect("Select pages to extract", options=list(range(1, len(images)+1)), default=[])
+        # --- Page Selection ---
+        selected_pages = st.multiselect(
+            "Select pages to extract (1-based)",
+            options=list(range(1, len(images)+1)),
+            default=[]
+        )
 
         all_dataframes = []
 
         for page_num in selected_pages:
-            st.subheader(f"📄 Page {page_num}")
-            with st.spinner("Processing page..."):
-                pre_img = preprocess_image(images[page_num - 1])
-                table_img, boxes = detect_table_cells(pre_img)
-                st.image(table_img, caption="🧭 Detected Table", use_container_width=True)
-                st.write(f"🧾 Detected {len(boxes)} cell(s)")
+            st.subheader(f"📄 Processing Page {page_num}")
+            image = images[page_num - 1]
 
-                df = extract_cells_to_dataframe(pre_img, boxes, lang=ocr_lang)
-                st.dataframe(df)
-                all_dataframes.append(df)
+            with st.spinner(f"Running OCR on page {page_num}..."):
+                df = extract_table_paddle(image)
 
+            st.success("✅ OCR completed")
+            st.dataframe(df)
+            all_dataframes.append((page_num, df))
+
+        # --- Download Button ---
         if all_dataframes:
-            if st.button("📥 Download All as Excel"):
+            if st.button("📥 Download Excel File"):
                 with io.BytesIO() as towrite:
                     with pd.ExcelWriter(towrite, engine='openpyxl') as writer:
-                        for i, df in enumerate(all_dataframes):
-                            df.to_excel(writer, index=False, header=False, sheet_name=f"Page_{selected_pages[i]}")
+                        for page_num, df in all_dataframes:
+                            df.to_excel(writer, index=False, header=False, sheet_name=f"Page_{page_num}")
                     towrite.seek(0)
                     st.download_button(
-                        label="Download Excel File",
+                        label="Download Excel",
                         data=towrite,
-                        file_name="tables_extracted.xlsx",
+                        file_name="extracted_tables.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     )
