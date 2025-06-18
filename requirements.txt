@@ -1,10 +1,9 @@
 streamlit
-pillow
 pdf2image
-pdfplumber
 pytesseract
+pandas
 opencv-python-headless
-layoutparser[layoutmodels,tesseract]
-python-doctr[torch]
-torch
-torchvision
+Pillow
+openpyxl
+doctr
+
