@@ -1,11 +1,12 @@
-pip>=24.0
+streamlit
 paddleocr
 paddlepaddle==2.5.0
 opencv-python-headless
-streamlit
 pdf2image
 pytesseract
 pdfplumber
-openpyxl
-Pillow
+pandas
 numpy
+Pillow
+openpyxl
+
