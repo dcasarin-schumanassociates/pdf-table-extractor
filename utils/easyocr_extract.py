@@ -1,16 +1,35 @@
-import pytesseract
+# utils/easyocr_extract.py
+
+import easyocr
 import pandas as pd
+import numpy as np
 
-def extract_cells_to_dataframe(image, boxes, lang="eng"):
-    rows = []
-    current_row = []
+# Load English by default, add more languages as needed
+reader = easyocr.Reader(['en'], gpu=False)
+
+def extract_table_easyocr(image):
+    result = reader.readtext(np.array(image), detail=1)
+
+    if not result:
+        return pd.DataFrame([["No text found"]])
+
+    # Get bounding boxes and text
+    boxes_text = []
+    for (bbox, text, conf) in result:
+        if text.strip():
+            x_min = int(min([point[0] for point in bbox]))
+            y_min = int(min([point[1] for point in bbox]))
+            boxes_text.append(((x_min, y_min), text.strip()))
+
+    # Sort vertically then horizontally
+    items = sorted(boxes_text, key=lambda x: (x[0][1], x[0][0]))
+
+    # Group into rows
+    rows, current_row = [], []
     last_y = -9999
-    tolerance = 10
+    tolerance = 15
 
-    for x, y, w, h in boxes:
-        cropped = image[y:y+h, x:x+w]
-        text = pytesseract.image_to_string(cropped, config="--psm 6", lang=lang).strip()
-
+    for (x, y), text in items:
         if abs(y - last_y) > tolerance:
             if current_row:
                 rows.append(current_row)
@@ -18,17 +37,11 @@ def extract_cells_to_dataframe(image, boxes, lang="eng"):
             last_y = y
         else:
             current_row.append(text)
-
     if current_row:
         rows.append(current_row)
 
-    max_cols = max(len(row) for row in rows)
-    for row in rows:
-        row += [""] * (max_cols - len(row))
-
-    return pd.DataFrame(rows)
-
-    max_cols = max((len(r) for r in rows), default=0)
+    # Normalize row lengths
+    max_cols = max(len(r) for r in rows)
     for r in rows:
         r += [""] * (max_cols - len(r))
 
