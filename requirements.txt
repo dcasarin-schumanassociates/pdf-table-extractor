@@ -7,3 +7,7 @@ pytesseract
 pandas
 openpyxl
 pdfplumber
+layoutparser
+layoutparser[layoutmodels,tesseract]
+torch
+opencv-python-headless
