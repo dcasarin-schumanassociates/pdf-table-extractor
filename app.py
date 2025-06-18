@@ -100,7 +100,3 @@ if uploaded_file:
                             file_name="multi_page_tables.xlsx",
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                         )
-
-                if df.empty:
-                    st.warning("⚠️ No text extracted from this page.")
-                else:
