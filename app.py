@@ -60,14 +60,14 @@ if uploaded_file:
             all_dataframes.append(df)
 
             # 🔍 OCR fallback on bottom area for totals or free-text
-            bottom_slice = pre_img[int(pre_img.shape[0] * 0.85):, :]
-            footer_text = pytesseract.image_to_string(
-                bottom_slice, config="--psm 6", lang=ocr_lang
-            ).strip()
+            # bottom_slice = pre_img[int(pre_img.shape[0] * 0.85):, :]
+            # footer_text = pytesseract.image_to_string(
+                # bottom_slice, config="--psm 6", lang=ocr_lang
+            # ).strip()
 
-            if footer_text:
-                st.markdown("#### 📉 Totals Detected Below Table:")
-                st.code(footer_text)
+            # if footer_text:
+                # st.markdown("#### 📉 Totals Detected Below Table:")
+                # st.code(footer_text)
 
         # Final Excel export
         if all_dataframes:
