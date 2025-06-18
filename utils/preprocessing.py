@@ -17,7 +17,7 @@ def preprocess_image(pil_image):
         image,
         255,
         cv2.ADAPTIVE_THRESH_MEAN_C,
-        cv2.THRESH_BINARY
+        cv2.THRESH_BINARY,  # ✅ comma added here
         15,
         10
     )
