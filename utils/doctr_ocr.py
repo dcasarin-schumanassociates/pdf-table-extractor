@@ -1,31 +1,33 @@
-import numpy as np
-import pandas as pd
-from doctr.models import ocr_predictor
 from doctr.io import DocumentFile
+from doctr.models import ocr_predictor
+import pandas as pd
 
-# Load doctr model (first time downloads weights)
-model = ocr_predictor(pretrained=True)
+def extract_with_doctr(pdf_file_or_bytes, page_index=0):
+    # Read bytes if a file-like object is passed
+    if hasattr(pdf_file_or_bytes, "read"):
+        pdf_file_or_bytes = pdf_file_or_bytes.read()
 
-def extract_with_doctr(pil_image):
-    """
-    Run OCR using doctr and return text blocks as a DataFrame.
-    """
-    # Convert to numpy and run model
-    doc = DocumentFile.from_images([np.array(pil_image)])
+    # Load specific page only
+    doc = DocumentFile.from_pdf(pdf_file_or_bytes)[page_index:page_index+1]
+
+    # Load OCR model
+    model = ocr_predictor(pretrained=True)
+
     result = model(doc)
 
-    # Parse output
-    lines = result.pages[0].blocks
-    rows = []
-
-    for block in lines:
+    # Extract structured data from blocks
+    blocks = []
+    for block in result.pages[0].blocks:
+        row = []
         for line in block.lines:
-            text_line = [word.value for word in line.words]
-            rows.append(text_line)
+            line_text = " ".join([word.value for word in line.words])
+            row.append(line_text)
+        if row:
+            blocks.append(row)
 
-    # Normalize row lengths
-    max_len = max((len(r) for r in rows), default=0)
-    for r in rows:
-        r += [""] * (max_len - len(r))
+    # Normalise column count
+    max_cols = max((len(row) for row in blocks), default=0)
+    for row in blocks:
+        row += [""] * (max_cols - len(row))
 
-    return pd.DataFrame(rows)
+    return pd.DataFrame(blocks)
