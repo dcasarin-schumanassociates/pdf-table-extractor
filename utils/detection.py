@@ -16,7 +16,8 @@ def detect_table_cells(preprocessed_img):
     contours, _ = cv2.findContours(table_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     boxes = []
-   for cnt in contours:
+    
+    for cnt in contours:
     x, y, w, h = cv2.boundingRect(cnt)
     area = w * h
     if w > 40 and h > 20 and area > 1500:
