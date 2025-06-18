@@ -4,7 +4,8 @@ from tempfile import TemporaryDirectory
 import io
 import sys
 import os
-import pandas as pd 
+import pandas as pd
+import pytesseract
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
