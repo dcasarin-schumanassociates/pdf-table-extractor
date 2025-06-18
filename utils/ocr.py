@@ -1,18 +1,15 @@
 import pytesseract
 import pandas as pd
 
-
 def extract_cells_to_dataframe(image, boxes, lang="eng"):
-    rows, current_row = [], []
+    rows = []
+    current_row = []
     last_y = -9999
     tolerance = 10
 
-    # Sort boxes top to bottom, then left to right
-    boxes = sorted(boxes, key=lambda b: (b[1], b[0]))
-
     for x, y, w, h in boxes:
         cropped = image[y:y+h, x:x+w]
-        text = pytesseract.image_to_string(cropped, config="--psm 7", lang=lang).strip()
+        text = pytesseract.image_to_string(cropped, config="--psm 6", lang=lang).strip()
 
         if abs(y - last_y) > tolerance:
             if current_row:
@@ -24,6 +21,12 @@ def extract_cells_to_dataframe(image, boxes, lang="eng"):
 
     if current_row:
         rows.append(current_row)
+
+    max_cols = max(len(row) for row in rows)
+    for row in rows:
+        row += [""] * (max_cols - len(row))
+
+    return pd.DataFrame(rows)
 
     max_cols = max((len(r) for r in rows), default=0)
     for r in rows:
