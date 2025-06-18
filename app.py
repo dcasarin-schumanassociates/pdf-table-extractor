@@ -1,65 +1,59 @@
 import streamlit as st
 from pdf2image import convert_from_bytes
 from tempfile import TemporaryDirectory
-import pandas as pd
-import sys
-import os
 import io
+import os
+import sys
+import pandas as pd
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from utils.doctr_extract import extract_with_doctr
+from utils.preprocessing import preprocess_image
+from utils.detection import detect_table_cells
+from utils.ocr import extract_cells_to_dataframe
 
 st.set_page_config(page_title="PDF Table Extractor", layout="centered")
-st.title("📄 Intelligent PDF Table Extractor with Doctr")
+st.title("📄 Upload a Scanned PDF to Extract Tables")
 
-# File upload
+ocr_lang = st.selectbox("Select OCR language", ["eng", "ita", "deu", "fra", "spa", "nld"], index=0)
 uploaded_file = st.file_uploader("Upload a scanned PDF file", type=["pdf"])
 
 if uploaded_file:
-    # Language selector (for future compatibility)
-    ocr_lang = st.selectbox("OCR Language (for future Tesseract fallback)", ["eng", "ita", "deu", "fra", "spa", "nld"], index=0)
-
     with TemporaryDirectory() as temp_dir:
-        st.info("Converting PDF to preview images...")
-        images = convert_from_bytes(uploaded_file.read(), dpi=150, output_folder=temp_dir)
-        st.success(f"{len(images)} page(s) loaded.")
+        st.info("Converting PDF to images...")
+        images = convert_from_bytes(uploaded_file.read(), dpi=300, output_folder=temp_dir)
+        st.success(f"✅ PDF converted: {len(images)} page(s) detected.")
 
         if st.checkbox("Show page previews"):
             for i, img in enumerate(images):
                 st.image(img, caption=f"Page {i+1}", use_container_width=True)
 
-        # Reset file read position for OCR
-        uploaded_file.seek(0)
+        selected_pages = st.multiselect("Select pages to extract", options=list(range(1, len(images)+1)), default=[])
 
-        # Page selection
-        selected_pages = st.multiselect("Select pages to extract (1-based)", options=list(range(1, len(images)+1)), default=[])
-
-        all_dfs = []
+        all_dataframes = []
 
         for page_num in selected_pages:
             st.subheader(f"📄 Page {page_num}")
-            progress = st.progress(0, text="Extracting with Doctr...")
+            with st.spinner("Processing page..."):
+                pre_img = preprocess_image(images[page_num - 1])
+                table_img, boxes = detect_table_cells(pre_img)
+                st.image(table_img, caption="🧭 Detected Table", use_container_width=True)
+                st.write(f"🧾 Detected {len(boxes)} cell(s)")
 
-            try:
-                df = extract_with_doctr(uploaded_file, page_index=page_num - 1)
+                df = extract_cells_to_dataframe(pre_img, boxes, lang=ocr_lang)
                 st.dataframe(df)
-                all_dfs.append((page_num, df))
-            except Exception as e:
-                st.error(f"❌ Error on Page {page_num}: {e}")
+                all_dataframes.append(df)
 
-            progress.progress(100, text="Done")
-
-        if all_dfs:
-            if st.button("📥 Download all as Excel"):
-                with io.BytesIO() as output:
-                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                        for pg, df in all_dfs:
-                            df.to_excel(writer, index=False, header=False, sheet_name=f"Page_{pg}")
-                    output.seek(0)
+        if all_dataframes:
+            if st.button("📥 Download All as Excel"):
+                with io.BytesIO() as towrite:
+                    with pd.ExcelWriter(towrite, engine='openpyxl') as writer:
+                        for i, df in enumerate(all_dataframes):
+                            df.to_excel(writer, index=False, header=False, sheet_name=f"Page_{selected_pages[i]}")
+                    towrite.seek(0)
                     st.download_button(
                         label="Download Excel File",
-                        data=output,
-                        file_name="ocr_extracted_tables.xlsx",
+                        data=towrite,
+                        file_name="tables_extracted.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     )
