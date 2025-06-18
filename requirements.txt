@@ -1,9 +1,7 @@
 streamlit
 pdf2image
-pytesseract
-pandas
 opencv-python-headless
-Pillow
+pytesseract
+pillow
+pandas
 openpyxl
-doctr
-
