@@ -6,18 +6,18 @@ def preprocess_image(pil_image):
     # Convert to grayscale
     image = np.array(pil_image.convert("L"))
 
-    # Resize image (to improve small character detection)
-    image = cv2.resize(image, None, fx=1.5, fy=1.5, interpolation=cv2.INTER_CUBIC)
+    # Moderate resize (improves digit detection but avoids skew)
+    image = cv2.resize(image, None, fx=1.2, fy=1.2, interpolation=cv2.INTER_LINEAR)
 
-    # Apply Gaussian blur to reduce noise
+    # Use standard Gaussian blur
     image = cv2.GaussianBlur(image, (3, 3), 0)
 
-    # Adaptive Thresholding
+    # Binary threshold (not inverted)
     image = cv2.adaptiveThreshold(
         image,
         255,
-        cv2.ADAPTIVE_THRESH_MEAN_C,
-        cv2.THRESH_BINARY,  # ✅ comma added here
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY,  # ⚠️ This keeps table lines black
         15,
         10
     )
